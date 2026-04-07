@@ -166,19 +166,28 @@ export function subscribeToChanges() {
       event: '*',
       schema: 'public',
       table: 'todos',
-      filter: `user_id=eq.${user.value.id}`,
-    }, () => {
-      // 変更があったら全件再取得（シンプルで確実）
+    }, (payload) => {
+      console.log('[Realtime] todos changed:', payload.eventType);
       fetchTodos();
     })
     .on('postgres_changes', {
       event: '*',
       schema: 'public',
       table: 'todo_categories',
+    }, (payload) => {
+      console.log('[Realtime] todo_categories changed:', payload.eventType);
+      fetchTodos();
+    })
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'categories',
     }, () => {
       fetchTodos();
     })
-    .subscribe();
+    .subscribe((status) => {
+      console.log('[Realtime] subscription status:', status);
+    });
 }
 
 export function unsubscribeFromChanges() {
