@@ -2,25 +2,27 @@ import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const basePath = process.env.GITHUB_PAGES ? '/todo-app/' : '/';
+
 export default defineConfig({
   root: 'src',
   publicDir: '../public',
-  base: process.env.GITHUB_PAGES ? '/todo-app/' : '/',
+  base: basePath,
   plugins: [
     preact(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon-192.svg', 'icons/icon-512.svg'],
+      includeAssets: ['icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png'],
       manifest: {
         name: 'Todo App',
         short_name: 'Todo',
-        start_url: '/',
+        start_url: basePath,
         display: 'standalone',
         background_color: '#ffffff',
-        theme_color: '#4A8D9C',
+        theme_color: '#3E7784',
         icons: [
-          { src: '/icons/icon-192.svg', sizes: '192x192', type: 'image/svg+xml' },
-          { src: '/icons/icon-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+          { src: `${basePath}icons/icon-192.png`, sizes: '192x192', type: 'image/png' },
+          { src: `${basePath}icons/icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
         ]
       },
       workbox: {
