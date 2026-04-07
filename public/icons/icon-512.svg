@@ -1,4 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="80" fill="#4A8D9C"/>
-  <polyline points="150 256 214 320 362 172" fill="none" stroke="white" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3E7784"/>
+      <stop offset="100%" style="stop-color:#2D5A64"/>
+    </linearGradient>
+  </defs>
+  <!-- 背景: 角丸スクエア -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- チェックマーク -->
+  <path d="M144 267 L218 341 L368 171" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 円弧アクセント -->
+  <circle cx="256" cy="256" r="150" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="8"/>
 </svg>
