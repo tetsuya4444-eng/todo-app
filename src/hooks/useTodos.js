@@ -130,16 +130,24 @@ export const filteredTodos = computed(() => {
     if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
 
     if (sortKey === 'priority') {
-      return a.priority - b.priority;
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      // 同じ優先度なら新しいものが上
+      return new Date(b.created_at) - new Date(a.created_at);
     }
     if (sortKey === 'created_at') {
       return new Date(b.created_at) - new Date(a.created_at);
     }
-    // due_date: nullは下に
-    if (!a.due_date && !b.due_date) return 0;
-    if (!a.due_date) return 1;
-    if (!b.due_date) return -1;
-    return new Date(a.due_date) - new Date(b.due_date);
+    // due_date: 期限ありは期限が近い順（上）、期限なしは作成日が新しい順（上）
+    // 期限あり → 期限なし の順に並べる
+    if (a.due_date && b.due_date) {
+      const diff = new Date(a.due_date) - new Date(b.due_date);
+      if (diff !== 0) return diff;
+      return new Date(b.created_at) - new Date(a.created_at);
+    }
+    if (a.due_date && !b.due_date) return -1; // 期限ありが上
+    if (!a.due_date && b.due_date) return 1;
+    // 両方期限なし → 新しいものが上
+    return new Date(b.created_at) - new Date(a.created_at);
   });
 
   return list;
