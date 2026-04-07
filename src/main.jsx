@@ -7,3 +7,20 @@ import { initAuth } from './hooks/useAuth';
 initAuth();
 
 render(<App />, document.getElementById('app'));
+
+// Service Worker更新の即時反映
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.ready.then(registration => {
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      if (newWorker) {
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'activated') {
+            // 新しいSWが有効化されたらページをリロード
+            window.location.reload();
+          }
+        });
+      }
+    });
+  });
+}
