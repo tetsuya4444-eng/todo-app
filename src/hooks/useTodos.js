@@ -145,6 +145,41 @@ export const filteredTodos = computed(() => {
   return list;
 });
 
+// Supabase Realtime サブスクリプション
+let realtimeChannel = null;
+
+export function subscribeToChanges() {
+  if (isDemoMode || realtimeChannel) return;
+  if (!user.value?.id) return;
+
+  realtimeChannel = supabase
+    .channel('todos-realtime')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'todos',
+      filter: `user_id=eq.${user.value.id}`,
+    }, () => {
+      // 変更があったら全件再取得（シンプルで確実）
+      fetchTodos();
+    })
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'todo_categories',
+    }, () => {
+      fetchTodos();
+    })
+    .subscribe();
+}
+
+export function unsubscribeFromChanges() {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+}
+
 export async function fetchTodos() {
   todosLoading.value = true;
 

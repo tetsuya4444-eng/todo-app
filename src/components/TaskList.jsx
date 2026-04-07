@@ -1,6 +1,6 @@
-import { useEffect } from 'preact/hooks';
+import { useEffect, useRef, useState, useCallback } from 'preact/hooks';
 import { signal } from '@preact/signals';
-import { filteredTodos, todosLoading, fetchTodos, todos, searchQuery } from '../hooks/useTodos';
+import { filteredTodos, todosLoading, fetchTodos, todos, searchQuery, subscribeToChanges, unsubscribeFromChanges } from '../hooks/useTodos';
 import { fetchCategories } from '../hooks/useCategories';
 import { navigateTo } from '../app';
 import { QuickInput } from './QuickInput';
@@ -11,10 +11,53 @@ import { IconSettings, IconSearch, IconPlus, IconX } from './Icons';
 const showSearch = signal(false);
 
 export function TaskList() {
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const touchStartY = useRef(0);
+  const isPulling = useRef(false);
+  const containerRef = useRef(null);
+
   useEffect(() => {
     fetchTodos();
     fetchCategories();
+    subscribeToChanges();
+    return () => unsubscribeFromChanges();
   }, []);
+
+  // スワイプリフレッシュのハンドラ
+  const PULL_THRESHOLD = 80;
+
+  const onTouchStart = useCallback((e) => {
+    if (window.scrollY === 0) {
+      touchStartY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    }
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    if (!isPulling.current || refreshing) return;
+    const diff = e.touches[0].clientY - touchStartY.current;
+    if (diff > 0 && window.scrollY === 0) {
+      e.preventDefault();
+      setPullDistance(Math.min(diff * 0.5, 120));
+    } else {
+      isPulling.current = false;
+      setPullDistance(0);
+    }
+  }, [refreshing]);
+
+  const onTouchEnd = useCallback(async () => {
+    if (!isPulling.current) return;
+    isPulling.current = false;
+    if (pullDistance >= PULL_THRESHOLD) {
+      setRefreshing(true);
+      setPullDistance(50);
+      await fetchTodos();
+      await fetchCategories();
+      setRefreshing(false);
+    }
+    setPullDistance(0);
+  }, [pullDistance]);
 
   const loading = todosLoading.value;
   const list = filteredTodos.value;
@@ -35,7 +78,25 @@ export function TaskList() {
   const completedTodos = list.filter(t => t.is_completed);
 
   return (
-    <div class="task-list-page">
+    <div
+      class="task-list-page"
+      ref={containerRef}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* プルトゥリフレッシュインジケーター */}
+      {(pullDistance > 0 || refreshing) && (
+        <div class="pull-refresh-indicator" style={{
+          height: `${pullDistance}px`,
+          opacity: Math.min(pullDistance / PULL_THRESHOLD, 1),
+        }}>
+          <div class={`pull-refresh-spinner ${refreshing ? 'is-spinning' : ''}`}>
+            {refreshing ? '更新中...' : (pullDistance >= PULL_THRESHOLD ? '離して更新' : '↓ 引いて更新')}
+          </div>
+        </div>
+      )}
+
       {/* ヘッダー */}
       <header class="app-header">
         <h1 class="app-header-title">Todo</h1>
@@ -202,6 +263,31 @@ export function TaskList() {
         .search-bar-close:hover {
           background: var(--color-bg-subtle);
           color: var(--color-text);
+        }
+
+        .pull-refresh-indicator {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          background: var(--color-bg);
+          transition: height 200ms ease-out;
+        }
+
+        .pull-refresh-spinner {
+          font-size: var(--font-size-sm);
+          color: var(--color-text-tertiary);
+          font-weight: 500;
+        }
+
+        .pull-refresh-spinner.is-spinning {
+          color: var(--color-primary);
+          animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
         }
       `}</style>
     </div>
