@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Todo - タスク一覧</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ========================================
+   Design Tokens
+   ======================================== */
+:root {
+  --color-primary-50:  #EEF4F5;
+  --color-primary-100: #D5E3E6;
+  --color-primary-200: #A8C7CD;
+  --color-primary:     #4A8D9C;
+  --color-primary-600: #3E7784;
+  --color-primary-700: #33616C;
+  --color-primary-800: #284B54;
+
+  --color-accent:      #C4A265;
+  --color-accent-light: #FAF3E6;
+  --color-accent-dark:  #9E8350;
+
+  --color-error:       #B85C5C;
+  --color-error-bg:    #FAF0F0;
+  --color-success:     #5A8A6A;
+  --color-success-bg:  #F0F7F2;
+  --color-warning:     #B8865A;
+  --color-warning-bg:  #FAF5F0;
+
+  --color-bg:          #FAFAFA;
+  --color-bg-white:    #FFFFFF;
+  --color-bg-subtle:   #F3F4F6;
+
+  --color-text:        #1A1A1A;
+  --color-text-secondary: #6B7280;
+  --color-text-tertiary:  #9CA3AF;
+  --color-text-on-primary: #FFFFFF;
+
+  --color-border:      #E5E7EB;
+  --color-border-focus: #4A8D9C;
+
+  --color-priority-high:   #B85C5C;
+  --color-priority-medium: #C4A265;
+  --color-priority-low:    #6B7280;
+
+  --font-family-base: "Inter", "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-xs:   0.75rem;
+  --font-size-sm:   0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg:   1.125rem;
+  --font-size-xl:   1.25rem;
+  --font-size-2xl:  1.5rem;
+
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md:  0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg:  0 4px 16px rgba(0,0,0,0.10);
+  --shadow-xl:  0 8px 32px rgba(0,0,0,0.12);
+
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-full: 9999px;
+
+  --transition-fast:   120ms ease-out;
+  --transition-normal: 200ms ease-out;
+}
+
+/* ========================================
+   Reset & Base
+   ======================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-family-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.5;
+  min-height: 100dvh;
+}
+
+/* ========================================
+   App Header
+   ======================================== */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 56px;
+  background: var(--color-bg-white);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-header-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: background-color var(--transition-fast);
+}
+
+.icon-btn:hover {
+  background: var(--color-bg-subtle);
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ========================================
+   Quick Input Bar
+   ======================================== */
+.quick-input {
+  position: sticky;
+  top: 56px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--color-bg-white);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.quick-input-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-bg-subtle);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.quick-input-field:focus-within {
+  background: var(--color-bg-white);
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.quick-input-field svg {
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.quick-input-field input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  min-width: 0;
+}
+
+.quick-input-field input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.quick-input-hint {
+  display: none;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+/* ========================================
+   Filter Bar
+   ======================================== */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--color-bg-white);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 36px;
+  transition: all var(--transition-fast);
+}
+
+.filter-chip:hover {
+  background: var(--color-primary-50);
+  color: var(--color-primary);
+}
+
+.filter-chip.is-active {
+  background: var(--color-primary-50);
+  color: var(--color-primary);
+  border-color: var(--color-primary-200);
+}
+
+.filter-chip svg {
+  width: 14px;
+  height: 14px;
+}
+
+.filter-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 36px;
+  margin-left: auto;
+}
+
+.sort-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ========================================
+   Task List
+   ======================================== */
+.task-list-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 8px 0;
+}
+
+.task-list-section-label {
+  padding: 8px 16px 4px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ========================================
+   Task Item
+   ======================================== */
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 10px 0;
+  background: var(--color-bg-white);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 5px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  min-height: 48px;
+}
+
+/* 優先度カラーバー（5px幅） */
+.task-item.priority-high {
+  border-left-color: var(--color-priority-high);
+  background: #FDFAFA;
+}
+
+.task-item.priority-medium {
+  border-left-color: var(--color-priority-medium);
+}
+
+.task-item.priority-low {
+  border-left-color: var(--color-border);
+}
+
+.task-item:hover {
+  background: var(--color-bg-subtle);
+}
+
+.task-item.priority-high:hover {
+  background: #FAF5F5;
+}
+
+.task-item:last-child {
+  border-bottom: none;
+}
+
+/* チェックボックス */
+.task-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  margin: -10px -12px -10px -12px;
+  cursor: pointer;
+}
+
+.task-checkbox-inner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.task-checkbox-inner.is-checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.task-checkbox-inner.is-checked svg {
+  display: block;
+}
+
+.task-checkbox-inner svg {
+  width: 14px;
+  height: 14px;
+  color: var(--color-text-on-primary);
+  display: none;
+}
+
+/* タスク本体: タイトル＋カテゴリが1行にインライン表示 */
+.task-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.task-title {
+  font-size: var(--font-size-base);
+  font-weight: 400;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.task-item.is-completed .task-title {
+  color: var(--color-text-tertiary);
+  text-decoration: line-through;
+}
+
+/* カテゴリタグ: タイトル直後にインライン表示 */
+.task-inline-categories {
+  display: inline-flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* 右端に寄せる情報（期限・メモアイコン・シェブロン） */
+.task-trailing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.task-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.task-due svg {
+  width: 13px;
+  height: 13px;
+}
+
+.task-due.is-overdue {
+  color: var(--color-error);
+  font-weight: 500;
+}
+
+.task-due.is-today {
+  color: var(--color-accent-dark);
+  font-weight: 500;
+}
+
+.task-category {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+}
+
+.task-category[data-color="teal"] {
+  background: #EEF4F5;
+  color: #3E7784;
+}
+
+.task-category[data-color="amber"] {
+  background: #FAF3E6;
+  color: #7A6840;
+}
+
+.task-category[data-color="rose"] {
+  background: #F5EDED;
+  color: #8B5A5A;
+}
+
+.task-category[data-color="indigo"] {
+  background: #EEEDF5;
+  color: #5C5E82;
+}
+
+.task-memo-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-tertiary);
+}
+
+.task-memo-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ========================================
+   Task Accordion (詳細展開)
+   ======================================== */
+.task-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 200ms ease-out, padding 200ms ease-out;
+  padding: 0 16px 0 50px;
+  background: var(--color-bg-subtle);
+  border-top: none;
+}
+
+.task-item.is-expanded + .task-detail {
+  max-height: 400px;
+  padding: 12px 16px 12px 50px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* 属性情報を2カラムグリッドで表示 */
+.task-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  font-size: var(--font-size-sm);
+}
+
+.task-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.task-detail-label {
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  flex-shrink: 0;
+}
+
+.task-detail-value {
+  color: var(--color-text-secondary);
+}
+
+.task-detail-memo {
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: var(--color-bg-white);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.task-detail-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.task-detail-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1.5px solid var(--color-primary-200);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  min-height: 32px;
+  transition: all var(--transition-fast);
+}
+
+.task-detail-btn:hover {
+  background: var(--color-primary-50);
+}
+
+.task-detail-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.task-detail-btn.is-danger {
+  color: var(--color-error);
+  border-color: var(--color-error-bg);
+}
+
+.task-detail-btn.is-danger:hover {
+  background: var(--color-error-bg);
+}
+
+/* 展開インジケーター（シェブロン） - task-trailing内 */
+.task-expand-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-tertiary);
+  transition: transform var(--transition-normal);
+}
+
+.task-expand-indicator svg {
+  width: 16px;
+  height: 16px;
+}
+
+.task-item.is-expanded .task-expand-indicator {
+  transform: rotate(90deg);
+}
+
+/* 展開中のタスクアイテムのスタイル */
+.task-item.is-expanded {
+  background: var(--color-bg-white);
+}
+
+/* ========================================
+   FAB (Floating Action Button)
+   ======================================== */
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.fab:hover {
+  background: var(--color-primary-600);
+  box-shadow: var(--shadow-xl);
+}
+
+.fab:active {
+  background: var(--color-primary-700);
+}
+
+.fab svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* ========================================
+   Task Count
+   ======================================== */
+.task-count {
+  padding: 8px 16px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+/* ========================================
+   Empty State
+   ======================================== */
+.empty-state {
+  display: none; /* flex に変更で表示 */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 32px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.empty-state-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  max-width: 280px;
+}
+
+/* ========================================
+   Responsive: Tablet (768px+)
+   ======================================== */
+@media (min-width: 768px) {
+  .app-header {
+    padding: 0 24px;
+  }
+
+  .quick-input {
+    padding: 12px 24px;
+  }
+
+  .quick-input-hint {
+    display: block;
+  }
+
+  .filter-bar {
+    padding: 8px 24px;
+  }
+
+  .task-list-container {
+    padding: 8px 24px;
+  }
+
+  .task-item {
+    padding: 12px 0;
+    border-radius: var(--radius-sm);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .task-count {
+    padding: 8px 24px;
+  }
+
+  .fab {
+    bottom: 32px;
+    right: 32px;
+  }
+}
+
+/* ========================================
+   Responsive: PC (1024px+)
+   ======================================== */
+@media (min-width: 1024px) {
+  .app-header {
+    padding: 0 32px;
+  }
+
+  .app-header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .quick-input {
+    padding: 12px 32px;
+  }
+
+  .quick-input-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .filter-bar {
+    padding: 8px 32px;
+    justify-content: flex-start;
+  }
+
+  .filter-bar-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .task-list-container {
+    padding: 8px 32px;
+  }
+
+  .task-item {
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    margin-bottom: 4px;
+    border-bottom: none;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .fab {
+    bottom: 40px;
+    right: 40px;
+    width: 60px;
+    height: 60px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ========================================
+     App Header
+     ======================================== -->
+<header class="app-header">
+  <h1 class="app-header-title">Todo</h1>
+  <div class="app-header-actions">
+    <button class="icon-btn" aria-label="検索">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </button>
+    <button class="icon-btn" aria-label="設定">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<!-- ========================================
+     Quick Input Bar
+     ======================================== -->
+<div class="quick-input">
+  <div class="quick-input-field">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+    <input type="text" placeholder="新しいタスクを追加..." aria-label="新しいタスクを追加">
+  </div>
+  <span class="quick-input-hint">Enter で追加</span>
+</div>
+
+<!-- ========================================
+     Filter Bar
+     ======================================== -->
+<div class="filter-bar">
+  <button class="filter-chip is-active">すべて</button>
+  <button class="filter-chip">未完了</button>
+  <button class="filter-chip">完了済み</button>
+  <span class="filter-divider"></span>
+  <button class="filter-chip" data-color="teal">
+    <span style="width:8px;height:8px;border-radius:50%;background:#6B9DA8;display:inline-block;"></span>
+    仕事
+  </button>
+  <button class="filter-chip" data-color="amber">
+    <span style="width:8px;height:8px;border-radius:50%;background:#C4A265;display:inline-block;"></span>
+    個人
+  </button>
+  <button class="filter-chip" data-color="rose">
+    <span style="width:8px;height:8px;border-radius:50%;background:#C48B8B;display:inline-block;"></span>
+    議会
+  </button>
+  <button class="sort-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="4" y1="6" x2="13" y2="6"></line>
+      <line x1="4" y1="12" x2="11" y2="12"></line>
+      <line x1="4" y1="18" x2="9" y2="18"></line>
+      <polyline points="15 9 18 6 21 9"></polyline>
+      <line x1="18" y1="6" x2="18" y2="18"></line>
+    </svg>
+    期限順
+  </button>
+</div>
+
+<!-- ========================================
+     Task List
+     ======================================== -->
+<main class="task-list-container">
+
+  <div class="task-list-section-label">今日 - 4月7日</div>
+
+  <!-- タスク1: 高優先度・期限今日・メモあり（展開状態のサンプル） -->
+  <div class="task-item is-expanded has-detail priority-high" onclick="toggleAccordion(this)">
+    <div class="task-checkbox" role="checkbox" aria-checked="false" tabindex="0" onclick="event.stopPropagation()">
+      <div class="task-checkbox-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+    </div>
+    <div class="task-body">
+      <span class="task-title">議会だよりの原稿を提出する</span>
+      <span class="task-inline-categories">
+        <span class="task-category" data-color="rose">議会</span>
+      </span>
+    </div>
+    <div class="task-trailing">
+      <span class="task-due is-today">今日</span>
+      <span class="task-memo-icon" title="メモあり">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+      </span>
+      <div class="task-expand-indicator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </div>
+    </div>
+  </div>
+  <div class="task-detail" style="max-height:400px;padding:10px 16px 10px 50px;border-top:1px solid var(--color-border);">
+    <div class="task-detail-grid">
+      <div class="task-detail-item">
+        <span class="task-detail-label">期限</span>
+        <span class="task-detail-value">4/7（今日）</span>
+      </div>
+      <div class="task-detail-item">
+        <span class="task-detail-label">リマインダー</span>
+        <span class="task-detail-value">1時間前</span>
+      </div>
+      <div class="task-detail-item">
+        <span class="task-detail-label">優先度</span>
+        <span class="task-detail-value" style="color:var(--color-priority-high);">高</span>
+      </div>
+      <div class="task-detail-item">
+        <span class="task-detail-label">カテゴリ</span>
+        <span class="task-detail-value"><span class="task-category" data-color="rose">議会</span></span>
+      </div>
+    </div>
+    <div class="task-detail-memo">・写真を3枚添付すること
+・文字数は800字以内
+・田中議長に確認済み</div>
+    <div class="task-detail-actions">
+      <button class="task-detail-btn" onclick="event.stopPropagation()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        編集
+      </button>
+      <button class="task-detail-btn is-danger" onclick="event.stopPropagation()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
+        削除
+      </button>
+    </div>
+  </div>
+
+  <!-- タスク2: 高優先度・期限切れ -->
+  <div class="task-item has-detail priority-high" onclick="toggleAccordion(this)">
+    <div class="task-checkbox" role="checkbox" aria-checked="false" tabindex="0" onclick="event.stopPropagation()">
+      <div class="task-checkbox-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+    </div>
+    <div class="task-body">
+      <span class="task-title">補助金申請書類の確認</span>
+      <span class="task-inline-categories">
+        <span class="task-category" data-color="teal">仕事</span>
+      </span>
+    </div>
+    <div class="task-trailing">
+      <span class="task-due is-overdue">4/5</span>
+      <div class="task-expand-indicator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- タスク3: 中優先度・期限あり・メモあり -->
+  <div class="task-item has-detail priority-medium" onclick="toggleAccordion(this)">
+    <div class="task-checkbox" role="checkbox" aria-checked="false" tabindex="0" onclick="event.stopPropagation()">
+      <div class="task-checkbox-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+    </div>
+    <div class="task-body">
+      <span class="task-title">TFC定例会の資料を準備する</span>
+      <span class="task-inline-categories">
+        <span class="task-category" data-color="teal">仕事</span>
+      </span>
+    </div>
+    <div class="task-trailing">
+      <span class="task-due">4/10</span>
+      <span class="task-memo-icon" title="メモあり">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+      </span>
+      <div class="task-expand-indicator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- タスク4: 低優先度・期限なし（メモ的タスク） -->
+  <div class="task-item priority-low" onclick="toggleAccordion(this)">
+    <div class="task-checkbox" role="checkbox" aria-checked="false" tabindex="0" onclick="event.stopPropagation()">
+      <div class="task-checkbox-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+    </div>
+    <div class="task-body">
+      <span class="task-title">Obsidianのフォルダ構成を見直す</span>
+      <span class="task-inline-categories">
+        <span class="task-category" data-color="amber">個人</span>
+      </span>
+    </div>
+    <div class="task-trailing"></div>
+  </div>
+
+  <!-- タスク5: 中優先度・複数カテゴリ -->
+  <div class="task-item has-detail priority-medium" onclick="toggleAccordion(this)">
+    <div class="task-checkbox" role="checkbox" aria-checked="false" tabindex="0" onclick="event.stopPropagation()">
+      <div class="task-checkbox-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+    </div>
+    <div class="task-body">
+      <span class="task-title">Claude Code連携用のAPIキーを設定する</span>
+      <span class="task-inline-categories">
+        <span class="task-category" data-color="teal">仕事</span>
+        <span class="task-category" data-color="indigo">技術</span>
+      </span>
+    </div>
+    <div class="task-trailing">
+      <span class="task-due">4/12</span>
+      <div class="task-expand-indicator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- タスク6: 完了済み -->
+  <div class="task-list-section-label" style="margin-top: 8px;">完了済み</div>
+  <div class="task-item is-completed" onclick="toggleAccordion(this)">
+    <div class="task-checkbox" role="checkbox" aria-checked="true" tabindex="0" onclick="event.stopPropagation()">
+      <div class="task-checkbox-inner is-checked">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+    </div>
+    <div class="task-body">
+      <span class="task-title">牛乳とパンを買う</span>
+      <span class="task-inline-categories">
+        <span class="task-category" data-color="amber">個人</span>
+      </span>
+    </div>
+    <div class="task-trailing"></div>
+  </div>
+
+  <div class="task-count">6件のタスク（未完了: 5 / 完了: 1）</div>
+</main>
+
+<!-- ========================================
+     FAB
+     ======================================== -->
+<button class="fab" aria-label="新しいタスクを作成">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+</button>
+
+<script>
+function toggleAccordion(taskItem) {
+  // 同じタスクなら閉じる、違うタスクなら切り替え
+  const wasExpanded = taskItem.classList.contains('is-expanded');
+
+  // 全タスクを閉じる
+  document.querySelectorAll('.task-item.is-expanded').forEach(item => {
+    item.classList.remove('is-expanded');
+    const detail = item.nextElementSibling;
+    if (detail && detail.classList.contains('task-detail')) {
+      detail.style.maxHeight = '0';
+      detail.style.padding = '0 16px 0 50px';
+      detail.style.borderTop = 'none';
+    }
+  });
+
+  // 閉じていたなら開く
+  if (!wasExpanded) {
+    taskItem.classList.add('is-expanded');
+    let detail = taskItem.nextElementSibling;
+    if (detail && detail.classList.contains('task-detail')) {
+      detail.style.maxHeight = '400px';
+      detail.style.padding = '12px 16px 12px 50px';
+      detail.style.borderTop = '1px solid var(--color-border)';
+    }
+  }
+}
+</script>
+
+</body>
+</html>
